@@ -221,6 +221,8 @@ public class EditorView extends ViewElement {
 //            if (lfID.equals("Windows")) {
 //                setBackground((Color)UIManager.get("nb_workplace_fill"));
 //            }
+
+            add(new JLabel("test", SwingConstants.CENTER), BorderLayout.CENTER);
             
             // PENDING Adding image into empty area.
             String imageSource = Constants.SWITCH_IMAGE_SOURCE; // NOI18N
