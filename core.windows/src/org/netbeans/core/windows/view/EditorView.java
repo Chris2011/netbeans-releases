@@ -55,6 +55,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.*;
 import javax.swing.border.Border;
+import javax.swing.border.LineBorder;
 import org.netbeans.core.windows.*;
 import org.netbeans.core.windows.view.dnd.*;
 import org.openide.util.*;
@@ -213,7 +214,17 @@ public class EditorView extends ViewElement {
             init();
         }
 
-        
+        private JLabel getLabel(String text, int alignment) {
+            JLabel label = new JLabel(text, alignment);
+            label.setBorder(new LineBorder(Color.RED, 1));
+//            label.setSize(new Dimension(50, 50));
+            Font labelFont = new Font(label.getFont().getName(), Font.BOLD, 14);
+            
+            label.setFont(labelFont);
+
+            return label;
+        }
+
         private void init() {
             setLayout(new BorderLayout());
             // special background for XP style
@@ -222,7 +233,21 @@ public class EditorView extends ViewElement {
 //                setBackground((Color)UIManager.get("nb_workplace_fill"));
 //            }
 
-            add(new JLabel("test", SwingConstants.CENTER), BorderLayout.CENTER);
+            JPanel pnlCenter = new JPanel(new BorderLayout());
+//            pnlCenter.setBackground(Color.black);
+//            pnlCenter.setLayout(new BoxLayout(pnlCenter, BoxLayout.Y_AXIS));
+            pnlCenter.setLayout(new GridLayout(6, 0, 0, 0));
+            pnlCenter.setBorder(new LineBorder(Color.BLUE, 1));
+//            pnlCenter.setPreferredSize(new Dimension(20, 20));
+
+            pnlCenter.add(getLabel(NbBundle.getMessage(EditorView.class, "LBL_QuickSearch"), SwingConstants.CENTER), BorderLayout.CENTER);
+            pnlCenter.add(getLabel(NbBundle.getMessage(EditorView.class, "LBL_ProjectsWindow"), SwingConstants.CENTER), BorderLayout.CENTER);
+            pnlCenter.add(getLabel(NbBundle.getMessage(EditorView.class, "LBL_OpenProject"), SwingConstants.CENTER), BorderLayout.CENTER);
+            pnlCenter.add(getLabel(NbBundle.getMessage(EditorView.class, "LBL_GoToFile"), SwingConstants.CENTER), BorderLayout.CENTER);
+            pnlCenter.add(getLabel(NbBundle.getMessage(EditorView.class, "LBL_OpenRecentFile"), SwingConstants.CENTER), BorderLayout.CENTER);
+            pnlCenter.add(getLabel(NbBundle.getMessage(EditorView.class, "LBL_DropFilesHere"), SwingConstants.CENTER), BorderLayout.CENTER);
+
+            add(pnlCenter);
             
             // PENDING Adding image into empty area.
             String imageSource = Constants.SWITCH_IMAGE_SOURCE; // NOI18N
