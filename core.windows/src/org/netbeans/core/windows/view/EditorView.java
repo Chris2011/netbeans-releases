@@ -56,8 +56,10 @@ import java.util.logging.Logger;
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.border.LineBorder;
+import javax.swing.plaf.FontUIResource;
 import org.netbeans.core.windows.*;
 import org.netbeans.core.windows.view.dnd.*;
+import org.openide.filesystems.FileUtil;
 import org.openide.util.*;
 import org.openide.windows.*;
 
@@ -216,8 +218,6 @@ public class EditorView extends ViewElement {
 
         private JLabel getLabel(String text, int alignment) {
             JLabel label = new JLabel(text, alignment);
-            label.setBorder(new LineBorder(Color.RED, 1));
-//            label.setSize(new Dimension(50, 50));
             Font labelFont = new Font(label.getFont().getName(), Font.BOLD, 14);
             
             label.setFont(labelFont);
@@ -234,15 +234,17 @@ public class EditorView extends ViewElement {
 //            }
 
             JPanel pnlCenter = new JPanel(new BorderLayout());
-//            pnlCenter.setBackground(Color.black);
-//            pnlCenter.setLayout(new BoxLayout(pnlCenter, BoxLayout.Y_AXIS));
-            pnlCenter.setLayout(new GridLayout(6, 0, 0, 0));
+            pnlCenter.setLayout(new BoxLayout(pnlCenter, BoxLayout.Y_AXIS));
+            pnlCenter.setPreferredSize(new Dimension(100, 200));
             pnlCenter.setBorder(new LineBorder(Color.BLUE, 1));
-//            pnlCenter.setPreferredSize(new Dimension(20, 20));
 
-            pnlCenter.add(getLabel(NbBundle.getMessage(EditorView.class, "LBL_QuickSearch"), SwingConstants.CENTER), BorderLayout.CENTER);
+            Action action = FileUtil.getConfigObject("Actions/Edit/org-netbeans-modules-quicksearch-QuickSearchAction.instance", Action.class);
+            KeyStroke ks = action != null ? (KeyStroke)action.getValue(Action.ACCELERATOR_KEY) : null;
+            
+            pnlCenter.add(getLabel(NbBundle.getMessage(EditorView.class, "LBL_QuickSearch", ks), SwingConstants.CENTER), BorderLayout.CENTER);
             pnlCenter.add(getLabel(NbBundle.getMessage(EditorView.class, "LBL_ProjectsWindow"), SwingConstants.CENTER), BorderLayout.CENTER);
             pnlCenter.add(getLabel(NbBundle.getMessage(EditorView.class, "LBL_OpenProject"), SwingConstants.CENTER), BorderLayout.CENTER);
+            pnlCenter.add(getLabel(NbBundle.getMessage(EditorView.class, "LBL_OpenFile"), SwingConstants.CENTER), BorderLayout.CENTER);
             pnlCenter.add(getLabel(NbBundle.getMessage(EditorView.class, "LBL_GoToFile"), SwingConstants.CENTER), BorderLayout.CENTER);
             pnlCenter.add(getLabel(NbBundle.getMessage(EditorView.class, "LBL_OpenRecentFile"), SwingConstants.CENTER), BorderLayout.CENTER);
             pnlCenter.add(getLabel(NbBundle.getMessage(EditorView.class, "LBL_DropFilesHere"), SwingConstants.CENTER), BorderLayout.CENTER);
