@@ -216,13 +216,33 @@ public class EditorView extends ViewElement {
             init();
         }
 
-        private JLabel getLabel(String text, int alignment) {
-            JLabel label = new JLabel(text, alignment);
-            Font labelFont = new Font(label.getFont().getName(), Font.BOLD, 14);
-            
-            label.setFont(labelFont);
+        private JPanel getShortcutPanel(String text, String shortcutText, int alignment) {
+            JPanel shortcutPanel = new JPanel(new GridLayout(1, 2, 5, 5));
+            JLabel textLabel = new JLabel(text, alignment);
+            JLabel shortcutLabel = new JLabel(shortcutText, alignment);
+            Font labelFont = new Font(textLabel.getFont().getName(), Font.BOLD, 14);
 
-            return label;
+            shortcutPanel.setBorder(new LineBorder(Color.RED, 1));
+            
+            textLabel.setFont(labelFont);
+            shortcutLabel.setFont(labelFont);
+            
+            shortcutLabel.setForeground(Color.BLUE);
+            
+            shortcutPanel.add(textLabel);
+            shortcutPanel.add(shortcutLabel);
+
+            return shortcutPanel;
+        }
+        
+        private String getKey(String path) {
+            Action action = FileUtil.getConfigObject(path, Action.class);
+            
+            if (action != null) {
+                return action.getValue(Action.ACCELERATOR_KEY).toString().toUpperCase().replace("PRESSED", "+");
+            }
+         
+            return "No shortcut assigned";
         }
 
         private void init() {
@@ -237,18 +257,15 @@ public class EditorView extends ViewElement {
             pnlCenter.setLayout(new BoxLayout(pnlCenter, BoxLayout.Y_AXIS));
             pnlCenter.setPreferredSize(new Dimension(100, 200));
             pnlCenter.setBorder(new LineBorder(Color.BLUE, 1));
-
-            Action action = FileUtil.getConfigObject("Actions/Edit/org-netbeans-modules-quicksearch-QuickSearchAction.instance", Action.class);
-            KeyStroke ks = action != null ? (KeyStroke)action.getValue(Action.ACCELERATOR_KEY) : null;
             
-            pnlCenter.add(getLabel(NbBundle.getMessage(EditorView.class, "LBL_QuickSearch", ks), SwingConstants.CENTER), BorderLayout.CENTER);
-            pnlCenter.add(getLabel(NbBundle.getMessage(EditorView.class, "LBL_ProjectsWindow"), SwingConstants.CENTER), BorderLayout.CENTER);
-            pnlCenter.add(getLabel(NbBundle.getMessage(EditorView.class, "LBL_OpenProject"), SwingConstants.CENTER), BorderLayout.CENTER);
-            pnlCenter.add(getLabel(NbBundle.getMessage(EditorView.class, "LBL_OpenFile"), SwingConstants.CENTER), BorderLayout.CENTER);
-            pnlCenter.add(getLabel(NbBundle.getMessage(EditorView.class, "LBL_GoToFile"), SwingConstants.CENTER), BorderLayout.CENTER);
-            pnlCenter.add(getLabel(NbBundle.getMessage(EditorView.class, "LBL_OpenRecentFile"), SwingConstants.CENTER), BorderLayout.CENTER);
-            pnlCenter.add(getLabel(NbBundle.getMessage(EditorView.class, "LBL_DropFilesHere"), SwingConstants.CENTER), BorderLayout.CENTER);
-
+            pnlCenter.add(getShortcutPanel(NbBundle.getMessage(EditorView.class, "LBL_QuickSearch"), getKey("Actions/Edit/org-netbeans-modules-quicksearch-QuickSearchAction.instance"), SwingConstants.CENTER), BorderLayout.CENTER);
+            pnlCenter.add(getShortcutPanel(NbBundle.getMessage(EditorView.class, "LBL_ProjectsWindow"), getKey(""), SwingConstants.CENTER), BorderLayout.CENTER);
+            pnlCenter.add(getShortcutPanel(NbBundle.getMessage(EditorView.class, "LBL_OpenProject"), getKey(""), SwingConstants.CENTER), BorderLayout.CENTER);
+            pnlCenter.add(getShortcutPanel(NbBundle.getMessage(EditorView.class, "LBL_OpenFile"), getKey(""), SwingConstants.CENTER), BorderLayout.CENTER);
+            pnlCenter.add(getShortcutPanel(NbBundle.getMessage(EditorView.class, "LBL_GoToFile"), getKey(""), SwingConstants.CENTER), BorderLayout.CENTER);
+            pnlCenter.add(getShortcutPanel(NbBundle.getMessage(EditorView.class, "LBL_OpenRecentFile"), getKey(""), SwingConstants.CENTER), BorderLayout.CENTER);
+            pnlCenter.add(getShortcutPanel(NbBundle.getMessage(EditorView.class, "LBL_DropFilesHere"), "", SwingConstants.CENTER), BorderLayout.CENTER);
+            
             add(pnlCenter);
             
             // PENDING Adding image into empty area.
