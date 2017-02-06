@@ -56,7 +56,6 @@ import java.util.logging.Logger;
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.border.LineBorder;
-import javax.swing.plaf.FontUIResource;
 import org.netbeans.core.windows.*;
 import org.netbeans.core.windows.view.dnd.*;
 import org.openide.filesystems.FileUtil;
@@ -238,7 +237,7 @@ public class EditorView extends ViewElement {
         private String getKey(String path) {
             Action action = FileUtil.getConfigObject(path, Action.class);
             
-            if (action != null) {
+            if (action != null && action.getValue(Action.ACCELERATOR_KEY) != null) {
                 return action.getValue(Action.ACCELERATOR_KEY).toString().toUpperCase().replace("PRESSED", "+");
             }
          
@@ -259,11 +258,12 @@ public class EditorView extends ViewElement {
             pnlCenter.setBorder(new LineBorder(Color.BLUE, 1));
             
             pnlCenter.add(getShortcutPanel(NbBundle.getMessage(EditorView.class, "LBL_QuickSearch"), getKey("Actions/Edit/org-netbeans-modules-quicksearch-QuickSearchAction.instance"), SwingConstants.CENTER), BorderLayout.CENTER);
-            pnlCenter.add(getShortcutPanel(NbBundle.getMessage(EditorView.class, "LBL_ProjectsWindow"), getKey(""), SwingConstants.CENTER), BorderLayout.CENTER);
-            pnlCenter.add(getShortcutPanel(NbBundle.getMessage(EditorView.class, "LBL_OpenProject"), getKey(""), SwingConstants.CENTER), BorderLayout.CENTER);
-            pnlCenter.add(getShortcutPanel(NbBundle.getMessage(EditorView.class, "LBL_OpenFile"), getKey(""), SwingConstants.CENTER), BorderLayout.CENTER);
-            pnlCenter.add(getShortcutPanel(NbBundle.getMessage(EditorView.class, "LBL_GoToFile"), getKey(""), SwingConstants.CENTER), BorderLayout.CENTER);
-            pnlCenter.add(getShortcutPanel(NbBundle.getMessage(EditorView.class, "LBL_OpenRecentFile"), getKey(""), SwingConstants.CENTER), BorderLayout.CENTER);
+            pnlCenter.add(getShortcutPanel(NbBundle.getMessage(EditorView.class, "LBL_ProjectsWindow"), getKey("Actions/Project/org-netbeans-modules-project-ui-logical-tab-action.instance"), SwingConstants.CENTER), BorderLayout.CENTER);
+            pnlCenter.add(getShortcutPanel(NbBundle.getMessage(EditorView.class, "LBL_NewProject"), getKey("Actions/Project/org-netbeans-modules-project-ui-NewProject.instance"), SwingConstants.CENTER), BorderLayout.CENTER);
+            pnlCenter.add(getShortcutPanel(NbBundle.getMessage(EditorView.class, "LBL_OpenProject"), getKey("Actions/Project/org-netbeans-modules-project-ui-OpenProject.instance"), SwingConstants.CENTER), BorderLayout.CENTER);
+            pnlCenter.add(getShortcutPanel(NbBundle.getMessage(EditorView.class, "LBL_OpenFile"), getKey("Actions/System/org-netbeans-modules-openfile-OpenFileAction.instance"), SwingConstants.CENTER), BorderLayout.CENTER);
+            pnlCenter.add(getShortcutPanel(NbBundle.getMessage(EditorView.class, "LBL_GoToFile"), getKey("Actions/Tools/org-netbeans-modules-jumpto-file-FileSearchAction.instance"), SwingConstants.CENTER), BorderLayout.CENTER);
+            pnlCenter.add(getShortcutPanel(NbBundle.getMessage(EditorView.class, "LBL_OpenRecentFile"), getKey("Actions/System/org-netbeans-modules-openfile-RecentFileAction.instance"), SwingConstants.CENTER), BorderLayout.CENTER);
             pnlCenter.add(getShortcutPanel(NbBundle.getMessage(EditorView.class, "LBL_DropFilesHere"), "", SwingConstants.CENTER), BorderLayout.CENTER);
             
             add(pnlCenter);
