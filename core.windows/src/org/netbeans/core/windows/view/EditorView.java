@@ -50,6 +50,8 @@ package org.netbeans.core.windows.view;
 import java.awt.*;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.dnd.*;
+import java.awt.event.InputEvent;
+import java.awt.event.KeyEvent;
 import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -215,18 +217,18 @@ public class EditorView extends ViewElement {
             init();
         }
 
-        private JPanel getShortcutPanel(String text, String shortcutText, int alignment) {
-            JPanel shortcutPanel = new JPanel(new GridLayout(1, 2, 5, 5));
-            JLabel textLabel = new JLabel(text, alignment);
-            JLabel shortcutLabel = new JLabel(shortcutText, alignment);
+        private JPanel getShortcutPanel(String text, String shortcutText) {
+            JPanel shortcutPanel = new JPanel();
+//            shortcutPanel.setLayout(new BoxLayout(shortcutPanel, BoxLayout.X_AXIS));
+            JLabel textLabel = new JLabel(text);
+            JLabel shortcutLabel = new JLabel(shortcutText);
             Font labelFont = new Font(textLabel.getFont().getName(), Font.BOLD, 14);
 
-            shortcutPanel.setBorder(new LineBorder(Color.RED, 1));
-            
             textLabel.setFont(labelFont);
             shortcutLabel.setFont(labelFont);
             
-            shortcutLabel.setForeground(Color.BLUE);
+            textLabel.setForeground(Color.DARK_GRAY);
+            shortcutLabel.setForeground(new Color(10, 100, 152));
             
             shortcutPanel.add(textLabel);
             shortcutPanel.add(shortcutLabel);
@@ -234,11 +236,50 @@ public class EditorView extends ViewElement {
             return shortcutPanel;
         }
         
+        private boolean isSolaris () {
+            String osName = System.getProperty ("os.name");
+            return osName != null && osName.startsWith ("SunOS");
+        }
+        
+        private String getKeyStrokeAsText(KeyStroke keyStroke) {
+            if (keyStroke == null)
+                return "";
+            int modifiers = keyStroke.getModifiers ();
+            StringBuilder sb = new StringBuilder ();
+            if ((modifiers & InputEvent.CTRL_DOWN_MASK) > 0)
+                sb.append ("Ctrl+");
+            if ((modifiers & InputEvent.ALT_DOWN_MASK) > 0)
+                sb.append ("Alt+");
+            if ((modifiers & InputEvent.SHIFT_DOWN_MASK) > 0)
+                sb.append ("Shift+");
+            if ((modifiers & InputEvent.META_DOWN_MASK) > 0)
+                if (Utilities.isMac()) {
+                    // Mac cloverleaf symbol
+                    sb.append ("\u2318+");
+                } else if (isSolaris()) {
+                    // Sun meta symbol
+                    sb.append ("\u25C6+");
+                } else {
+                    sb.append ("Meta+");
+                }
+            if (keyStroke.getKeyCode () != KeyEvent.VK_SHIFT &&
+                keyStroke.getKeyCode () != KeyEvent.VK_CONTROL &&
+                keyStroke.getKeyCode () != KeyEvent.VK_META &&
+                keyStroke.getKeyCode () != KeyEvent.VK_ALT &&
+                keyStroke.getKeyCode () != KeyEvent.VK_ALT_GRAPH
+            )
+            sb.append (Utilities.keyToString (
+                KeyStroke.getKeyStroke (keyStroke.getKeyCode (), 0)
+            ));
+
+            return sb.toString();
+        }
+        
         private String getKey(String path) {
             Action action = FileUtil.getConfigObject(path, Action.class);
             
             if (action != null && action.getValue(Action.ACCELERATOR_KEY) != null) {
-                return action.getValue(Action.ACCELERATOR_KEY).toString().toUpperCase().replace("PRESSED", "+");
+                return getKeyStrokeAsText((KeyStroke)action.getValue(Action.ACCELERATOR_KEY));
             }
          
             return "No shortcut assigned";
@@ -252,21 +293,62 @@ public class EditorView extends ViewElement {
 //                setBackground((Color)UIManager.get("nb_workplace_fill"));
 //            }
 
-            JPanel pnlCenter = new JPanel(new BorderLayout());
-            pnlCenter.setLayout(new BoxLayout(pnlCenter, BoxLayout.Y_AXIS));
-            pnlCenter.setPreferredSize(new Dimension(100, 200));
-            pnlCenter.setBorder(new LineBorder(Color.BLUE, 1));
+            final JPanel pnlCenter = new JPanel(new GridBagLayout());
             
-            pnlCenter.add(getShortcutPanel(NbBundle.getMessage(EditorView.class, "LBL_QuickSearch"), getKey("Actions/Edit/org-netbeans-modules-quicksearch-QuickSearchAction.instance"), SwingConstants.CENTER), BorderLayout.CENTER);
-            pnlCenter.add(getShortcutPanel(NbBundle.getMessage(EditorView.class, "LBL_ProjectsWindow"), getKey("Actions/Project/org-netbeans-modules-project-ui-logical-tab-action.instance"), SwingConstants.CENTER), BorderLayout.CENTER);
-            pnlCenter.add(getShortcutPanel(NbBundle.getMessage(EditorView.class, "LBL_NewProject"), getKey("Actions/Project/org-netbeans-modules-project-ui-NewProject.instance"), SwingConstants.CENTER), BorderLayout.CENTER);
-            pnlCenter.add(getShortcutPanel(NbBundle.getMessage(EditorView.class, "LBL_OpenProject"), getKey("Actions/Project/org-netbeans-modules-project-ui-OpenProject.instance"), SwingConstants.CENTER), BorderLayout.CENTER);
-            pnlCenter.add(getShortcutPanel(NbBundle.getMessage(EditorView.class, "LBL_OpenFile"), getKey("Actions/System/org-netbeans-modules-openfile-OpenFileAction.instance"), SwingConstants.CENTER), BorderLayout.CENTER);
-            pnlCenter.add(getShortcutPanel(NbBundle.getMessage(EditorView.class, "LBL_GoToFile"), getKey("Actions/Tools/org-netbeans-modules-jumpto-file-FileSearchAction.instance"), SwingConstants.CENTER), BorderLayout.CENTER);
-            pnlCenter.add(getShortcutPanel(NbBundle.getMessage(EditorView.class, "LBL_OpenRecentFile"), getKey("Actions/System/org-netbeans-modules-openfile-RecentFileAction.instance"), SwingConstants.CENTER), BorderLayout.CENTER);
-            pnlCenter.add(getShortcutPanel(NbBundle.getMessage(EditorView.class, "LBL_DropFilesHere"), "", SwingConstants.CENTER), BorderLayout.CENTER);
+            GridBagConstraints constraints = new GridBagConstraints(); 
             
+            constraints.anchor = GridBagConstraints.CENTER;
+            constraints.gridx = 0;
+            constraints.gridy = 0;
+            pnlCenter.add(getShortcutPanel(NbBundle.getMessage(EditorView.class, "LBL_QuickSearch"), getKey("Actions/Edit/org-netbeans-modules-quicksearch-QuickSearchAction.instance")), constraints);
+            
+            constraints.gridx = 0;
+            constraints.gridy = 1;
+            pnlCenter.add(getShortcutPanel(NbBundle.getMessage(EditorView.class, "LBL_ProjectsWindow"), getKey("Actions/Project/org-netbeans-modules-project-ui-logical-tab-action.instance")), constraints);
+            
+            constraints.gridx = 0;
+            constraints.gridy = 2;
+            pnlCenter.add(getShortcutPanel(NbBundle.getMessage(EditorView.class, "LBL_NewProject"), getKey("Actions/Project/org-netbeans-modules-project-ui-NewProject.instance")), constraints);
+            
+            constraints.gridx = 0;
+            constraints.gridy = 3;
+            pnlCenter.add(getShortcutPanel(NbBundle.getMessage(EditorView.class, "LBL_OpenProject"), getKey("Actions/Project/org-netbeans-modules-project-ui-OpenProject.instance")), constraints);
+            
+            constraints.gridx = 0;
+            constraints.gridy = 4;
+            pnlCenter.add(getShortcutPanel(NbBundle.getMessage(EditorView.class, "LBL_OpenFile"), getKey("Actions/System/org-netbeans-modules-openfile-OpenFileAction.instance")), constraints);
+            
+            constraints.gridx = 0;
+            constraints.gridy = 5;
+            pnlCenter.add(getShortcutPanel(NbBundle.getMessage(EditorView.class, "LBL_GoToFile"), getKey("Actions/Tools/org-netbeans-modules-jumpto-file-FileSearchAction.instance")), constraints);
+            
+            constraints.gridx = 0;
+            constraints.gridy = 6;
+            pnlCenter.add(getShortcutPanel(NbBundle.getMessage(EditorView.class, "LBL_OpenRecentFile"), getKey("Actions/System/org-netbeans-modules-openfile-RecentFileAction.instance")), constraints);
+            
+            constraints.gridx = 0;
+            constraints.gridy = 7;
+            pnlCenter.add(getShortcutPanel(NbBundle.getMessage(EditorView.class, "LBL_DropFilesHere"), ""), constraints);
+
             add(pnlCenter);
+            
+            
+            // FIXME: http://stackoverflow.com/questions/24723998/can-components-of-a-gridbaglayout-fill-parent-frame-upon-resize
+//            addComponentListener(new java.awt.event.ComponentAdapter() {
+//                @Override
+//                public void componentResized(java.awt.event.ComponentEvent evt) {
+//                    GridBagLayout layout = (GridBagLayout)getLayout();
+//                    JPanel panel = (JPanel)evt.getComponent();
+//
+//                    int width = panel.getWidth();
+//                    int height = panel.getHeight();
+//                    int wGap = panel.getInsets().left+panel.getInsets().right;
+//                    int hGap = panel.getInsets().top+panel.getInsets().bottom;
+//
+//                    layout.columnWidths = new int[]{width/2-wGap, width/2-wGap};
+//                    layout.rowHeights = new int[]{height-hGap};
+//                }
+//            });
             
             // PENDING Adding image into empty area.
             String imageSource = Constants.SWITCH_IMAGE_SOURCE; // NOI18N
