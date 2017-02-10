@@ -227,7 +227,7 @@ public class EditorView extends ViewElement {
             textLabel.setFont(labelFont);
             shortcutLabel.setFont(labelFont);
             
-            textLabel.setForeground(Color.DARK_GRAY);
+            textLabel.setForeground(Color.GRAY);
             shortcutLabel.setForeground(new Color(10, 100, 152));
             
             shortcutPanel.add(textLabel);
