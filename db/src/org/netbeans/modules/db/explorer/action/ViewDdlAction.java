@@ -45,6 +45,7 @@ import java.awt.HeadlessException;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
+import javax.swing.SwingUtilities;
 import org.netbeans.api.db.explorer.DatabaseException;
 import org.netbeans.lib.ddl.CommandNotSupportedException;
 import org.netbeans.lib.ddl.DDLException;
@@ -120,6 +121,7 @@ public class ViewDdlAction extends BaseAction {
         model.runReadAction(new Action<Metadata>() {
             @Override
             public void run(Metadata metaData) {
+                assert SwingUtilities.isEventDispatchThread() : "Needs to be called on the EDT";
                 Specification spec = connector.getDatabaseSpecification();
                 String tablename = node.getName();
 
