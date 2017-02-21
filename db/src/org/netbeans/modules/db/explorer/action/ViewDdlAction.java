@@ -117,40 +117,45 @@ public class ViewDdlAction extends BaseAction {
         final DatabaseConnection dbConn = node.getLookup().lookup(DatabaseConnection.class);
         final DatabaseConnector connector = dbConn.getConnector();
         final MetadataModel model = dbConn.getMetadataModel();
-        
+
         model.runReadAction(new Action<Metadata>() {
             @Override
-            public void run(Metadata metaData) {
-                assert SwingUtilities.isEventDispatchThread() : "Needs to be called on the EDT";
-                Specification spec = connector.getDatabaseSpecification();
-                String tablename = node.getName();
+            public void run(final Metadata metaData) {
+                SwingUtilities.invokeLater(new Runnable() {
+                    @Override
+                    public void run() {
+                        assert SwingUtilities.isEventDispatchThread() : "Needs to be called on the EDT";
+                        Specification spec = connector.getDatabaseSpecification();
+                        String tablename = node.getName();
 
-                Table table = node.getTableHandle().resolve(metaData);
+                        Table table = node.getTableHandle().resolve(metaData);
 
-                try {
-                    CreateTable createCommandCreateTable = spec.createCommandCreateTable(tablename);
-                    Collection<Column> columns = table.getColumns();
-                    List<TableColumn> pks = new LinkedList<>();
+                        try {
+                            CreateTable createCommandCreateTable = spec.createCommandCreateTable(tablename);
+                            Collection<Column> columns = table.getColumns();
+                            List<TableColumn> pks = new LinkedList<>();
 
-                    for (Column column : columns) {
-                        TableColumn col = connector.getColumnSpecification(table, column);
-                        createCommandCreateTable.getColumns().add(col);
+                            for (Column column : columns) {
+                                TableColumn col = connector.getColumnSpecification(table, column);
+                                createCommandCreateTable.getColumns().add(col);
 
-                        if (col.getObjectType().equals(TableColumn.PRIMARY_KEY)) {
-                            pks.add(col);
+                                if (col.getObjectType().equals(TableColumn.PRIMARY_KEY)) {
+                                    pks.add(col);
+                                }
+                            }
+                            //                            if (pks.size() > 1) {
+                            //                                setPrimaryKeyColumns(pks, connector, createCommandCreateTable, table);
+                            //                            }
+
+                            ShowSQLDialog dialog = new ShowSQLDialog();
+                            dialog.setLocationRelativeTo(WindowManager.getDefault().getMainWindow());
+                            dialog.setText(createCommandCreateTable.getCommand()); // NOI18N
+                            dialog.setVisible(true);
+                        } catch (HeadlessException | DatabaseException | CommandNotSupportedException | DDLException e) {
+                            e.printStackTrace();
                         }
                     }
-//                            if (pks.size() > 1) {
-//                                setPrimaryKeyColumns(pks, connector, createCommandCreateTable, table);
-//                            }
-
-                    ShowSQLDialog dialog = new ShowSQLDialog();
-                    dialog.setLocationRelativeTo(WindowManager.getDefault().getMainWindow());
-                    dialog.setText(createCommandCreateTable.getCommand()); // NOI18N
-                    dialog.setVisible(true);
-                } catch (HeadlessException | DatabaseException | CommandNotSupportedException | DDLException e) {
-                    e.printStackTrace();
-                }
+                });
             }
         });
     }
