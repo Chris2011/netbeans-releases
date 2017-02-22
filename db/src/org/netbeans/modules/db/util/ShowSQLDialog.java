@@ -54,6 +54,7 @@ import javax.swing.Action;
 import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.KeyStroke;
+import org.openide.text.CloneableEditorSupport;
 import org.openide.windows.WindowManager;
 
 /**
@@ -104,8 +105,8 @@ public class ShowSQLDialog extends JDialog {
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
         setTitle(org.openide.util.NbBundle.getMessage(ShowSQLDialog.class, "ShowSQLDialog.title")); // NOI18N
 
-        // jEditorPane1.setContentType(org.openide.util.NbBundle.getMessage(ShowSQLDialog.class, "ShowSQLDialog.jEditorPane1.contentType.plain")); // NOI18N
-        // jEditorPane1.setEditorKit(CloneableEditorSupport.getEditorKit(org.openide.util.NbBundle.getMessage(ShowSQLDialog.class, "ShowSQLDialog.jEditorPane1.contentType")));
+        jEditorPane1.setContentType(org.openide.util.NbBundle.getMessage(ShowSQLDialog.class, "ShowSQLDialog.jEditorPane1.contentType.plain")); // NOI18N
+        jEditorPane1.setEditorKit(CloneableEditorSupport.getEditorKit(org.openide.util.NbBundle.getMessage(ShowSQLDialog.class, "ShowSQLDialog.jEditorPane1.contentType")));
         jScrollPane1.setViewportView(jEditorPane1);
         jEditorPane1.getAccessibleContext().setAccessibleName(org.openide.util.NbBundle.getMessage(ShowSQLDialog.class, "showsql.editorpane.accessibleName")); // NOI18N
         jEditorPane1.getAccessibleContext().setAccessibleDescription(org.openide.util.NbBundle.getMessage(ShowSQLDialog.class, "ShowSQLDialog.jEditorPane1.AccessibleContext.accessibleDescription")); // NOI18N
