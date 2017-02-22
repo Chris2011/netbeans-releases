@@ -316,7 +316,7 @@ class SQLStatementGenerator {
         DBPrimaryKey pk = table.getPrimaryKey();
         if (pk != null) {
             count = 0;
-            sql.append(", PRIMARY KEY ("); // NOI18N
+            sql.append(",\n    PRIMARY KEY ("); // NOI18N
             for (String col : pk.getColumnNames()) {
                 if (count++ > 0) {
                     sql.append(", "); // NOI18N
