@@ -41,10 +41,10 @@
  */
 package org.netbeans.modules.db.explorer.action;
 
-import java.awt.HeadlessException;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 import javax.swing.SwingUtilities;
 import org.netbeans.api.db.explorer.DatabaseException;
 import org.netbeans.lib.ddl.CommandNotSupportedException;
@@ -79,8 +79,7 @@ import org.openide.windows.WindowManager;
 @ActionID(id = "org.netbeans.modules.db.explorer.action.ViewDdlAction", category = "Database")
 @ActionRegistration(displayName = "#ViewDDL", lazy = false)
 @ActionReferences(value = {
-    @ActionReference(path = "Databases/Explorer/Table/Actions", position = 450)
-    ,
+    @ActionReference(path = "Databases/Explorer/Table/Actions", position = 450),
     @ActionReference(path = "Databases/Explorer/TableList/Actions", position = 450)
 })
 public class ViewDdlAction extends BaseAction {
@@ -97,26 +96,36 @@ public class ViewDdlAction extends BaseAction {
 
     @Override
     public void performAction(final Node[] activatedNodes) {
+        final StringBuilder createCommands = new StringBuilder();
+        
         for (Node activatedNode : activatedNodes) {
             final TableNode node = activatedNode.getLookup().lookup(TableNode.class);
+            
+            createCommands.append("# Table structure of " + node.getName() + "\n");
 
             RequestProcessor.getDefault().post(new Runnable() {
                 @Override
                 public void run() {
                     try {
-                        getTableStructure(node);
-                    } catch (MetadataModelException e) {
+                        createCommands.append(getTableStructure(node) + "\n");
+                    } catch (MetadataModelException | DDLException e) {
                         e.printStackTrace();
                     }
                 }
             });
         }
+        
+        ShowSQLDialog dialog = new ShowSQLDialog();
+        dialog.setLocationRelativeTo(WindowManager.getDefault().getMainWindow());
+        dialog.setText(createCommands.toString()); // NOI18N
+        dialog.setVisible(true);
     }
 
-    private void getTableStructure(final TableNode node) throws MetadataModelException {
+    private String getTableStructure(final TableNode node) throws MetadataModelException, DDLException {
         final DatabaseConnection dbConn = node.getLookup().lookup(DatabaseConnection.class);
         final DatabaseConnector connector = dbConn.getConnector();
         final MetadataModel model = dbConn.getMetadataModel();
+        final AtomicReference<CreateTable> createCommandCreateTable = new AtomicReference<>();
 
         model.runReadAction(new Action<Metadata>() {
             @Override
@@ -131,13 +140,13 @@ public class ViewDdlAction extends BaseAction {
                         Table table = node.getTableHandle().resolve(metaData);
 
                         try {
-                            CreateTable createCommandCreateTable = spec.createCommandCreateTable(tablename);
+                            createCommandCreateTable.set(spec.createCommandCreateTable(tablename));
                             Collection<Column> columns = table.getColumns();
                             List<TableColumn> pks = new LinkedList<>();
 
                             for (Column column : columns) {
                                 TableColumn col = connector.getColumnSpecification(table, column);
-                                createCommandCreateTable.getColumns().add(col);
+                                createCommandCreateTable.get().getColumns().add(col);
 
                                 if (col.getObjectType().equals(TableColumn.PRIMARY_KEY)) {
                                     pks.add(col);
@@ -146,18 +155,15 @@ public class ViewDdlAction extends BaseAction {
                             //                            if (pks.size() > 1) {
                             //                                setPrimaryKeyColumns(pks, connector, createCommandCreateTable, table);
                             //                            }
-
-                            ShowSQLDialog dialog = new ShowSQLDialog();
-                            dialog.setLocationRelativeTo(WindowManager.getDefault().getMainWindow());
-                            dialog.setText(createCommandCreateTable.getCommand()); // NOI18N
-                            dialog.setVisible(true);
-                        } catch (HeadlessException | DatabaseException | CommandNotSupportedException | DDLException e) {
+                        } catch (DatabaseException | CommandNotSupportedException e) {
                             e.printStackTrace();
                         }
                     }
                 });
             }
         });
+        
+        return createCommandCreateTable.get().getCommand();
     }
 
     @Override
