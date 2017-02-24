@@ -208,6 +208,7 @@ public class EditorView extends ViewElement {
         private final WindowDnDManager windowDnDManager;
         
         private Component areaComponent;
+        private JPanel pnlCenter;
         
         
         public EditorAreaComponent(EditorView editorView, WindowDnDManager windowDnDManager) {
@@ -293,7 +294,7 @@ public class EditorView extends ViewElement {
 //                setBackground((Color)UIManager.get("nb_workplace_fill"));
 //            }
 
-            final JPanel pnlCenter = new JPanel(new GridBagLayout());
+            this.pnlCenter = new JPanel(new GridBagLayout());
             
             GridBagConstraints constraints = new GridBagConstraints(); 
             
@@ -330,9 +331,6 @@ public class EditorView extends ViewElement {
             constraints.gridy = 7;
             pnlCenter.add(getShortcutPanel(NbBundle.getMessage(EditorView.class, "LBL_DropFilesHere"), ""), constraints);
 
-            add(pnlCenter);
-            
-            
             // FIXME: http://stackoverflow.com/questions/24723998/can-components-of-a-gridbaglayout-fill-parent-frame-upon-resize
 //            addComponentListener(new java.awt.event.ComponentAdapter() {
 //                @Override
@@ -411,11 +409,14 @@ public class EditorView extends ViewElement {
         }
         
         public void setAreaComponent(Component areaComponent) {
+            add(this.pnlCenter, BorderLayout.CENTER);
+            
             if(this.areaComponent == areaComponent) {
                 // XXX PENDING revise how to better manipulate with components
                 // so there don't happen unneeded removals.
                 if(areaComponent != null
                 && !Arrays.asList(getComponents()).contains(areaComponent)) {
+                    remove(this.pnlCenter);
                     add(areaComponent, BorderLayout.CENTER);
                 }
                 
@@ -423,12 +424,14 @@ public class EditorView extends ViewElement {
             }
             
             if(this.areaComponent != null) {
+                remove(this.pnlCenter);
                 remove(this.areaComponent);
             }
             
             this.areaComponent = areaComponent;
             
             if(this.areaComponent != null) {
+                remove(this.pnlCenter);
                 add(this.areaComponent, BorderLayout.CENTER);
             }
         }
