@@ -42,10 +42,6 @@
 package org.netbeans.modules.db.explorer.action;
 
 import java.util.Collection;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
-import javax.swing.SwingUtilities;
 import org.netbeans.api.db.explorer.DatabaseException;
 import org.netbeans.lib.ddl.CommandNotSupportedException;
 import org.netbeans.lib.ddl.DDLException;
@@ -67,6 +63,7 @@ import org.openide.awt.ActionReference;
 import org.openide.awt.ActionReferences;
 import org.openide.awt.ActionRegistration;
 import org.openide.nodes.Node;
+import org.openide.util.Exceptions;
 import org.openide.util.HelpCtx;
 import org.openide.util.NbBundle;
 import org.openide.util.RequestProcessor;
@@ -84,6 +81,9 @@ import org.openide.windows.WindowManager;
 })
 public class ViewDdlAction extends BaseAction {
 
+    private final StringBuilder createCommands = new StringBuilder();
+    private final ShowSQLDialog dialog = new ShowSQLDialog();
+
     @Override
     public String getName() {
         return NbBundle.getMessage(ViewDdlAction.class, "ViewDDL"); // NOI18N
@@ -96,74 +96,60 @@ public class ViewDdlAction extends BaseAction {
 
     @Override
     public void performAction(final Node[] activatedNodes) {
-        final StringBuilder createCommands = new StringBuilder();
-        
-        for (Node activatedNode : activatedNodes) {
-            final TableNode node = activatedNode.getLookup().lookup(TableNode.class);
-            
-            createCommands.append("# Table structure of " + node.getName() + "\n");
+        dialog.setLocationRelativeTo(WindowManager.getDefault().getMainWindow());
+
+        final DatabaseConnection dbConn = activatedNodes[0].getLookup().lookup(DatabaseConnection.class);
+
+        if (dbConn != null) {
+            final DatabaseConnector connector = dbConn.getConnector();
+            final MetadataModel model = dbConn.getMetadataModel();
+            final Specification spec = connector.getDatabaseSpecification();
 
             RequestProcessor.getDefault().post(new Runnable() {
                 @Override
                 public void run() {
-                    try {
-                        createCommands.append(getTableStructure(node) + "\n");
-                    } catch (MetadataModelException | DDLException e) {
-                        e.printStackTrace();
+                    dialog.setText("");
+
+                    for (Node activatedNode : activatedNodes) {
+                        final TableNode node = activatedNode.getLookup().lookup(TableNode.class);
+
+                        try {
+                            getTableStructure(node, connector, model, spec);
+                        } catch (MetadataModelException ex) {
+                            Exceptions.printStackTrace(ex);
+                        }
                     }
                 }
             });
+            
+            dialog.setVisible(true);
         }
-        
-        ShowSQLDialog dialog = new ShowSQLDialog();
-        dialog.setLocationRelativeTo(WindowManager.getDefault().getMainWindow());
-        dialog.setText(createCommands.toString()); // NOI18N
-        dialog.setVisible(true);
     }
 
-    private String getTableStructure(final TableNode node) throws MetadataModelException, DDLException {
-        final DatabaseConnection dbConn = node.getLookup().lookup(DatabaseConnection.class);
-        final DatabaseConnector connector = dbConn.getConnector();
-        final MetadataModel model = dbConn.getMetadataModel();
-        final AtomicReference<CreateTable> createCommandCreateTable = new AtomicReference<>();
-
+    private void getTableStructure(final TableNode node, final DatabaseConnector connector, MetadataModel model, final Specification spec) throws MetadataModelException {
         model.runReadAction(new Action<Metadata>() {
             @Override
             public void run(final Metadata metaData) {
-                SwingUtilities.invokeLater(new Runnable() {
-                    @Override
-                    public void run() {
-                        assert SwingUtilities.isEventDispatchThread() : "Needs to be called on the EDT";
-                        Specification spec = connector.getDatabaseSpecification();
-                        String tablename = node.getName();
+                String tablename = node.getName();
+                Table table = node.getTableHandle().resolve(metaData);
 
-                        Table table = node.getTableHandle().resolve(metaData);
+                try {
+                    CreateTable createCommandCreateTable = spec.createCommandCreateTable(tablename);
+                    Collection<Column> columns = table.getColumns();
 
-                        try {
-                            createCommandCreateTable.set(spec.createCommandCreateTable(tablename));
-                            Collection<Column> columns = table.getColumns();
-                            List<TableColumn> pks = new LinkedList<>();
-
-                            for (Column column : columns) {
-                                TableColumn col = connector.getColumnSpecification(table, column);
-                                createCommandCreateTable.get().getColumns().add(col);
-
-                                if (col.getObjectType().equals(TableColumn.PRIMARY_KEY)) {
-                                    pks.add(col);
-                                }
-                            }
-                            //                            if (pks.size() > 1) {
-                            //                                setPrimaryKeyColumns(pks, connector, createCommandCreateTable, table);
-                            //                            }
-                        } catch (DatabaseException | CommandNotSupportedException e) {
-                            e.printStackTrace();
-                        }
+                    for (Column column : columns) {
+                        TableColumn col = connector.getColumnSpecification(table, column);
+                        createCommandCreateTable.getColumns().add(col);
                     }
-                });
+
+                    createCommands.append("# Table structure of ").append(tablename).append("\n");
+                    createCommands.append(createCommandCreateTable.getCommand()).append("\n\n");
+                    dialog.setText(createCommands.toString()); // NOI18N
+                } catch (DatabaseException | CommandNotSupportedException | DDLException e) {
+                    e.printStackTrace();
+                }
             }
         });
-        
-        return createCommandCreateTable.get().getCommand();
     }
 
     @Override
