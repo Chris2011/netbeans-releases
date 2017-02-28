@@ -88,6 +88,10 @@ public class ShowSQLDialog extends JDialog {
     public void setText(String sqlScript) {
         jEditorPane1.setText(sqlScript);
     }
+    
+    public void setCursorToTop() {
+        jEditorPane1.setCaretPosition(0);
+    }
 
     /** This method is called from within the constructor to
      * initialize the form.
