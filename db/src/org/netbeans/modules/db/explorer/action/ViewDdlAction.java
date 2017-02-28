@@ -82,7 +82,7 @@ public class ViewDdlAction extends BaseAction {
 
     @Override
     public void performAction(final Node[] activatedNodes) {
-        final ProgressHandle ph = ProgressHandle.createHandle("View DDL/SQL...");
+        final ProgressHandle ph = ProgressHandle.createHandle(this.getName());
         
         ph.setInitialDelay(0);
         ph.start();

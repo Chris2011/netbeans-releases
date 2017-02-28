@@ -83,7 +83,7 @@ public class CopyDdlAction extends BaseAction {
 
     @Override
     public void performAction(final Node[] activatedNodes) {
-        final ProgressHandle ph = ProgressHandle.createHandle("Copy DDL/SQL...");
+        final ProgressHandle ph = ProgressHandle.createHandle(this.getName());
         
         ph.setInitialDelay(0);
         ph.start();
