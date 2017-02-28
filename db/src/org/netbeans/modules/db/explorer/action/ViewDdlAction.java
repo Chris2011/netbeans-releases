@@ -41,33 +41,22 @@
  */
 package org.netbeans.modules.db.explorer.action;
 
-import java.util.Collection;
-import org.netbeans.api.db.explorer.DatabaseException;
-import org.netbeans.lib.ddl.CommandNotSupportedException;
-import org.netbeans.lib.ddl.DDLException;
-import org.netbeans.lib.ddl.impl.CreateTable;
+import javax.swing.SwingUtilities;
+import org.netbeans.api.progress.ProgressHandle;
 import org.netbeans.lib.ddl.impl.Specification;
-import org.netbeans.lib.ddl.impl.TableColumn;
 import org.netbeans.modules.db.explorer.DatabaseConnection;
 import org.netbeans.modules.db.explorer.DatabaseConnector;
 import org.netbeans.modules.db.explorer.node.TableNode;
-import org.netbeans.modules.db.metadata.model.api.Action;
-import org.netbeans.modules.db.metadata.model.api.Column;
-import org.netbeans.modules.db.metadata.model.api.Metadata;
 import org.netbeans.modules.db.metadata.model.api.MetadataModel;
-import org.netbeans.modules.db.metadata.model.api.MetadataModelException;
-import org.netbeans.modules.db.metadata.model.api.Table;
-import org.netbeans.modules.db.util.ShowSQLDialog;
+import org.netbeans.modules.db.util.DdlUtil;
 import org.openide.awt.ActionID;
 import org.openide.awt.ActionReference;
 import org.openide.awt.ActionReferences;
 import org.openide.awt.ActionRegistration;
 import org.openide.nodes.Node;
-import org.openide.util.Exceptions;
 import org.openide.util.HelpCtx;
 import org.openide.util.NbBundle;
 import org.openide.util.RequestProcessor;
-import org.openide.windows.WindowManager;
 
 /**
  *
@@ -81,9 +70,6 @@ import org.openide.windows.WindowManager;
 })
 public class ViewDdlAction extends BaseAction {
 
-    private final StringBuilder createCommands = new StringBuilder();
-    private final ShowSQLDialog dialog = new ShowSQLDialog();
-
     @Override
     public String getName() {
         return NbBundle.getMessage(ViewDdlAction.class, "ViewDDL"); // NOI18N
@@ -96,9 +82,21 @@ public class ViewDdlAction extends BaseAction {
 
     @Override
     public void performAction(final Node[] activatedNodes) {
-        dialog.setLocationRelativeTo(WindowManager.getDefault().getMainWindow());
-
+        final ProgressHandle ph = ProgressHandle.createHandle("View DDL/SQL...");
+        
+        ph.setInitialDelay(0);
+        ph.start();
+        ph.progress("Collecting table structure...");
+        
+        final DdlUtil ddlUtil = new DdlUtil();
         final DatabaseConnection dbConn = activatedNodes[0].getLookup().lookup(DatabaseConnection.class);
+
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                ddlUtil.initSqlDialog();
+            }
+        });
 
         if (dbConn != null) {
             final DatabaseConnector connector = dbConn.getConnector();
@@ -108,48 +106,17 @@ public class ViewDdlAction extends BaseAction {
             RequestProcessor.getDefault().post(new Runnable() {
                 @Override
                 public void run() {
-                    dialog.setText("");
-
                     for (Node activatedNode : activatedNodes) {
                         final TableNode node = activatedNode.getLookup().lookup(TableNode.class);
 
-                        try {
-                            getTableStructure(node, connector, model, spec);
-                        } catch (MetadataModelException ex) {
-                            Exceptions.printStackTrace(ex);
-                        }
+                        ddlUtil.getTableStructure(node, connector, model, spec);
                     }
+
+                    ph.finish();
+                    ddlUtil.showSqlDialog();
                 }
             });
-            
-            dialog.setVisible(true);
         }
-    }
-
-    private void getTableStructure(final TableNode node, final DatabaseConnector connector, MetadataModel model, final Specification spec) throws MetadataModelException {
-        model.runReadAction(new Action<Metadata>() {
-            @Override
-            public void run(final Metadata metaData) {
-                String tablename = node.getName();
-                Table table = node.getTableHandle().resolve(metaData);
-
-                try {
-                    CreateTable createCommandCreateTable = spec.createCommandCreateTable(tablename);
-                    Collection<Column> columns = table.getColumns();
-
-                    for (Column column : columns) {
-                        TableColumn col = connector.getColumnSpecification(table, column);
-                        createCommandCreateTable.getColumns().add(col);
-                    }
-
-                    createCommands.append("# Table structure of ").append(tablename).append("\n");
-                    createCommands.append(createCommandCreateTable.getCommand()).append("\n\n");
-                    dialog.setText(createCommands.toString()); // NOI18N
-                } catch (DatabaseException | CommandNotSupportedException | DDLException e) {
-                    e.printStackTrace();
-                }
-            }
-        });
     }
 
     @Override
