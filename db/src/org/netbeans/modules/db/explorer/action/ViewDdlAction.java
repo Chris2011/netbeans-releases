@@ -66,7 +66,7 @@ import org.openide.util.RequestProcessor;
 @ActionRegistration(displayName = "#ViewDDL", lazy = false)
 @ActionReferences(value = {
     @ActionReference(path = "Databases/Explorer/Table/Actions", position = 450),
-    @ActionReference(path = "Databases/Explorer/TableList/Actions", position = 450)
+//    @ActionReference(path = "Databases/Explorer/TableList/Actions", position = 450)
 })
 public class ViewDdlAction extends BaseAction {
 
@@ -121,6 +121,6 @@ public class ViewDdlAction extends BaseAction {
 
     @Override
     protected boolean enable(Node[] activatedNodes) {
-        return true;
+        return activatedNodes.length > 0;
     }
 }

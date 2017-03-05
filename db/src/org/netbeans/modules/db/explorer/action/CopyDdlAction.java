@@ -67,8 +67,6 @@ import org.openide.util.RequestProcessor;
 @ActionRegistration(displayName = "#ViewDDL", lazy = false)
 @ActionReferences(value = {
     @ActionReference(path = "Databases/Explorer/Table/Actions", position = 460)
-    ,
-    @ActionReference(path = "Databases/Explorer/TableList/Actions", position = 460)
 })
 public class CopyDdlAction extends BaseAction {
     @Override
@@ -116,6 +114,6 @@ public class CopyDdlAction extends BaseAction {
 
     @Override
     protected boolean enable(Node[] activatedNodes) {
-        return true;
+        return activatedNodes.length > 0;
     }
 }
