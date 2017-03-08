@@ -46,6 +46,7 @@ import org.netbeans.api.progress.ProgressHandle;
 import org.netbeans.lib.ddl.impl.Specification;
 import org.netbeans.modules.db.explorer.DatabaseConnection;
 import org.netbeans.modules.db.explorer.DatabaseConnector;
+import org.netbeans.modules.db.explorer.node.CatalogNode;
 import org.netbeans.modules.db.explorer.node.TableNode;
 import org.netbeans.modules.db.metadata.model.api.MetadataModel;
 import org.netbeans.modules.db.util.DdlUtil;
@@ -65,7 +66,9 @@ import org.openide.util.RequestProcessor;
 @ActionID(id = "org.netbeans.modules.db.explorer.action.ViewDdlAction", category = "Database")
 @ActionRegistration(displayName = "#ViewDDL", lazy = false)
 @ActionReferences(value = {
-    @ActionReference(path = "Databases/Explorer/Table/Actions", position = 450),
+    @ActionReference(path = "Databases/Explorer/Table/Actions", position = 450)
+    ,
+    @ActionReference(path = "Databases/Explorer/Catalog/Actions", position = 450)
 //    @ActionReference(path = "Databases/Explorer/TableList/Actions", position = 450)
 })
 public class ViewDdlAction extends BaseAction {
@@ -83,11 +86,11 @@ public class ViewDdlAction extends BaseAction {
     @Override
     public void performAction(final Node[] activatedNodes) {
         final ProgressHandle ph = ProgressHandle.createHandle(this.getName());
-        
+
         ph.setInitialDelay(0);
         ph.start();
         ph.progress("Collecting table structure...");
-        
+
         final DdlUtil ddlUtil = new DdlUtil();
         final DatabaseConnection dbConn = activatedNodes[0].getLookup().lookup(DatabaseConnection.class);
 
@@ -107,12 +110,21 @@ public class ViewDdlAction extends BaseAction {
                 @Override
                 public void run() {
                     for (Node activatedNode : activatedNodes) {
-                        final TableNode node = activatedNode.getLookup().lookup(TableNode.class);
+                        final CatalogNode dbNode = activatedNode.getLookup().lookup(CatalogNode.class);
 
-                        ddlUtil.getTableStructure(node, connector, model, spec);
+                        TableNode tableNode;
+
+                        if (dbNode != null) {
+                            ddlUtil.getDatabaseStructure(dbNode, connector, model, spec);
+                        } else {
+                            tableNode = activatedNode.getLookup().lookup(TableNode.class);
+
+                            ddlUtil.getTableFromNode(tableNode, connector, model, spec);
+                        }
                     }
 
                     ph.finish();
+
                     ddlUtil.showSqlDialog();
                 }
             });

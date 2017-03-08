@@ -101,7 +101,7 @@ public class CopyDdlAction extends BaseAction {
                     for (Node activatedNode : activatedNodes) {
                         final TableNode node = activatedNode.getLookup().lookup(TableNode.class);
 
-                        ddlUtil.getTableStructure(node, connector, model, spec);
+                        ddlUtil.getTableFromNode(node, connector, model, spec);
                     }
 
                     ph.finish();

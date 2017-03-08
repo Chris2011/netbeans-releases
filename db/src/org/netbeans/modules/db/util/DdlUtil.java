@@ -52,12 +52,15 @@ import org.netbeans.lib.ddl.impl.CreateTable;
 import org.netbeans.lib.ddl.impl.Specification;
 import org.netbeans.lib.ddl.impl.TableColumn;
 import org.netbeans.modules.db.explorer.DatabaseConnector;
+import org.netbeans.modules.db.explorer.node.CatalogNode;
 import org.netbeans.modules.db.explorer.node.TableNode;
 import org.netbeans.modules.db.metadata.model.api.Action;
+import org.netbeans.modules.db.metadata.model.api.Catalog;
 import org.netbeans.modules.db.metadata.model.api.Column;
 import org.netbeans.modules.db.metadata.model.api.Metadata;
 import org.netbeans.modules.db.metadata.model.api.MetadataModel;
 import org.netbeans.modules.db.metadata.model.api.MetadataModelException;
+import org.netbeans.modules.db.metadata.model.api.Schema;
 import org.netbeans.modules.db.metadata.model.api.Table;
 import org.openide.util.Exceptions;
 import org.openide.windows.WindowManager;
@@ -90,8 +93,25 @@ public class DdlUtil implements ClipboardOwner {
         sqlDialog.setCursorToTop();
         sqlDialog.setVisible(true);
     }
+    
+    private void getTableStructure(String tableName, Table table, DatabaseConnector connector, Specification spec) {
+        try {
+            CreateTable createCommandCreateTable = spec.createCommandCreateTable(tableName);
+            Collection<Column> columns = table.getColumns();
 
-    public void getTableStructure(final TableNode node, final DatabaseConnector connector, MetadataModel model, final Specification spec) {
+            for (Column column : columns) {
+                TableColumn col = connector.getColumnSpecification(table, column);
+                createCommandCreateTable.getColumns().add(col);
+            }
+
+            createCommand.append("# Table structure of ").append(tableName).append("\n");
+            createCommand.append(createCommandCreateTable.getCommand()).append("\n\n");
+        } catch (DatabaseException | CommandNotSupportedException | DDLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void getTableFromNode(final TableNode node, final DatabaseConnector connector, MetadataModel model, final Specification spec) {
         try {
             model.runReadAction(new Action<Metadata>() {
                 @Override
@@ -99,19 +119,32 @@ public class DdlUtil implements ClipboardOwner {
                     String tablename = node.getName();
                     Table table = node.getTableHandle().resolve(metaData);
 
-                    try {
-                        CreateTable createCommandCreateTable = spec.createCommandCreateTable(tablename);
-                        Collection<Column> columns = table.getColumns();
-
-                        for (Column column : columns) {
-                            TableColumn col = connector.getColumnSpecification(table, column);
-                            createCommandCreateTable.getColumns().add(col);
-                        }
-
-                        createCommand.append("# Table structure of ").append(tablename).append("\n");
-                        createCommand.append(createCommandCreateTable.getCommand()).append("\n\n");
-                    } catch (DatabaseException | CommandNotSupportedException | DDLException e) {
-                        e.printStackTrace();
+                    getTableStructure(tablename, table, connector, spec);
+                }
+            });
+        } catch (MetadataModelException ex) {
+            Exceptions.printStackTrace(ex);
+        }
+    }
+    
+    public void getDatabaseStructure(final CatalogNode node, final DatabaseConnector connector, MetadataModel model, final Specification spec) {
+           try {
+            model.runReadAction(new Action<Metadata>() {
+                @Override
+                public void run(final Metadata metaData) {
+                    String databaseName = node.getName();
+                    Catalog catalog = node.getCatalogHandle().resolve(metaData);
+                    
+                    Schema dbSchema = catalog.getSchema(databaseName);
+                    
+                    if (dbSchema == null) {
+                        dbSchema = catalog.getSyntheticSchema();
+                    }
+                    
+                    Collection<Table> tables = dbSchema.getTables();
+                    
+                    for (Table table : tables) {
+                        getTableStructure(table.getName(), table, connector, spec);
                     }
                 }
             });
@@ -119,7 +152,7 @@ public class DdlUtil implements ClipboardOwner {
             Exceptions.printStackTrace(ex);
         }
     }
-
+   
     @Override
     public void lostOwnership(Clipboard clipboard, Transferable contents) {}
 }
