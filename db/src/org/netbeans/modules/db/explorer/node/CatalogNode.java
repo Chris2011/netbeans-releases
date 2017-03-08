@@ -151,6 +151,10 @@ public class CatalogNode extends BaseNode implements PropertyChangeListener {
     public String getDisplayName() {
         return name;
     }
+    
+    public MetadataElementHandle<Catalog> getCatalogHandle() {
+        return catalogHandle;
+    }
 
     @Override
     public String getHtmlDisplayName() {
